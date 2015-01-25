@@ -30,10 +30,12 @@ struct hwt_callbacks {
 	void (*restart)();
 };
 
+typedef void (*ISRCallback)();
+
 class HardwareTimer {
 public:
-	HardwareTimer(long resolution, hwt_callbacks &callbacks) :
-		isrCallback(0), _resolution(resolution), _callbacks(callbacks) {
+	HardwareTimer(hwt_callbacks &callbacks, long resolution) :
+		_callbacks(callbacks), _resolution(resolution), _isr(0) {
 	}
 	void init(long us = 1000000);
 	void start();
@@ -42,11 +44,11 @@ public:
 	void attachInterrupt(void (*isr)(), long us = -1);
 	void detachInterrupt();
 	long setPeriod(long us);
-
-	void (*isrCallback)();
+	void isr();
 protected:
-	long _resolution;
 	hwt_callbacks &_callbacks;
+	long _resolution;
+	ISRCallback _isr;
 };
 
 #if defined(TCCR2A)

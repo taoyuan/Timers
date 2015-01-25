@@ -67,11 +67,11 @@ void _t2_restart() {
 
 hwt_callbacks TIMER2_CALLBACKS = { _t2_init, _t2_period, _t2_enable, _t2_disable, _t2_start, _t2_stop, _t2_restart };
 
-HardwareTimer Timer2(RESOLUTION_T8, TIMER2_CALLBACKS);
+HardwareTimer Timer2(TIMER2_CALLBACKS, RESOLUTION_T8);
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 ISR(TIMER2_COMPA_vect) {
-	Timer2.isrCallback();
+	Timer2.isr();
 }
 
 #endif

@@ -62,11 +62,11 @@ void _t3_restart() {
 
 hwt_callbacks TIMER3_CALLBACKS = { _t3_init, _t3_period, _t3_enable, _t3_disable, _t3_start, _t3_stop, _t3_restart };
 
-HardwareTimer Timer3(RESOLUTION_T16, TIMER3_CALLBACKS);
+HardwareTimer Timer3(TIMER3_CALLBACKS, RESOLUTION_T16);
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 ISR(TIMER3_OVF_vect) {
-	Timer3.isrCallback();
+	Timer3.isr();
 }
 
 #endif

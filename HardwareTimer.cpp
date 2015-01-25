@@ -22,7 +22,7 @@ long HardwareTimer::setPeriod(long us) {
 void HardwareTimer::attachInterrupt(void (*isr)(), long us) {
 	if (us > 0)
 		setPeriod(us);
-	isrCallback = isr;		// register the user's callback with the real ISR
+	_isr = isr;		// register the user's callback with the real ISR
 	_callbacks.enable(); 	// sets the timer overflow interrupt enable bit
 	sei();					// ensures that interrupts are globally enabled
 	start();
@@ -42,4 +42,10 @@ void HardwareTimer::stop() {
 
 void HardwareTimer::restart() {
 	_callbacks.restart();
+}
+
+void HardwareTimer::isr() {
+	if (_isr) {
+		_isr();
+	}
 }
