@@ -1,4 +1,4 @@
-#include <HardwareTimer.h>
+#include <Timers.h>
 
 HardwareTimer &Timer = Timer1; // Could be Timer1, Timer2 or Timer3
 
@@ -15,8 +15,7 @@ void setup(void) {
 	Serial.begin(115200);
 }
 
-// The interrupt will blink the LED, and keep
-// track of how many times it has blinked.
+// The interrupt will blink the LED, and keep track of how many times it has blinked.
 int ledState = LOW;
 volatile unsigned long blinkCount = 0; // use volatile for shared variables
 
@@ -30,8 +29,7 @@ void blinkLED(void) {
 	digitalWrite(led, ledState);
 }
 
-// The main program will print the blink count
-// to the Arduino Serial Monitor
+// The main program will print the blink count to the Arduino Serial Monitor
 void loop(void) {
 	unsigned long blinkCopy;  // holds a copy of the blinkCount
 
