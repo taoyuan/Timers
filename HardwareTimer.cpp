@@ -21,10 +21,13 @@ long HardwareTimer::setPeriod(long us) {
 
 void HardwareTimer::attachInterrupt(void (*isr)(), long us) {
 	if (us > 0)
-		setPeriod(us);
+	setPeriod(us);
 	_isr = isr;		// register the user's callback with the real ISR
 	_callbacks.enable(); 	// sets the timer overflow interrupt enable bit
-	sei();					// ensures that interrupts are globally enabled
+#ifdef __CC3200R1M1RGC__
+#else
+	sei();	
+#endif				// ensures that interrupts are globally enabled
 	start();
 }
 
