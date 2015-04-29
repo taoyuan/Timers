@@ -3,9 +3,11 @@
 #ifdef HAVE_HWTIMER2
 
 #ifdef __CC3200R1M1RGC__
+
 #include <driverlib/timer.h>
 #include <inc/hw_ints.h>
 #include <driverlib/prcm.h>
+
 #endif
 
 byte _t2_csb;
@@ -13,14 +15,15 @@ long _t2_cyc;
 int _t2_sca;
 
 #ifdef __CC3200R1M1RGC__
+
 void __t2_timer_handler(void) {
     unsigned long ulInts;
 
-    ulInts = MAP_TimerIntStatus(TIMERA1_BASE, 1);
+    ulInts = MAP_TimerIntStatus(TIMERA2_BASE, 1);
     //
     // Clear the timer interrupt.
     //
-    MAP_TimerIntClear(TIMERA1_BASE, ulInts);
+    MAP_TimerIntClear(TIMERA2_BASE, ulInts);
     Timer2.isr();
 }
 
@@ -36,10 +39,11 @@ void _t2_init() {
     MAP_IntMasterEnable();
     MAP_IntEnable(FAULT_SYSTICK);
     PRCMCC3200MCUInit();
-    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA1, PRCM_RUN_MODE_CLK);
-    MAP_PRCMPeripheralReset(PRCM_TIMERA1);
-    MAP_TimerConfigure(TIMERA1_BASE, TIMER_CFG_PERIODIC);
-    MAP_TimerPrescaleSet(TIMERA1_BASE, TIMER_BOTH, 0);
+    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA2, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralReset(PRCM_TIMERA2);
+    MAP_TimerConfigure(TIMERA2_BASE, TIMER_CFG_PERIODIC);
+    MAP_TimerPrescaleSet(TIMERA2_BASE, TIMER_BOTH, 0);
+
 #else
 		TCCR2A = _BV(WGM21);
 
@@ -50,11 +54,7 @@ void _t2_init() {
 
 long _t2_period(long us) {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerLoadSet(TIMERA1_BASE, TIMER_BOTH, US_TO_TICKS(us));
-    MAP_IntPrioritySet(INT_TIMERA0A, INT_PRIORITY_LVL_1);
-	MAP_TimerIntRegister(TIMERA1_BASE, TIMER_BOTH, __t2_timer_handler);
-    MAP_TimerIntEnable(TIMERA1_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
-
+    MAP_TimerLoadSet(TIMERA2_BASE, TIMER_BOTH, US_TO_TICKS(us));
 
 #else
 		long cycles = us * (SYSCLOCK / 1000000.0);
@@ -91,18 +91,20 @@ long _t2_period(long us) {
 
 void _t2_enable() {
 #ifdef __CC3200R1M1RGC__
+	MAP_TimerIntRegister(TIMERA2_BASE, TIMER_BOTH, __t2_timer_handler);
+	MAP_IntPrioritySet(INT_TIMERA2A, INT_PRIORITY_LVL_1);
+	MAP_TimerIntEnable(TIMERA2_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
 #else
-			TIMSK2 = _BV(OCIE2A);
+	TIMSK2 = _BV(OCIE2A);
 #endif
 
 }
 
 void _t2_disable() {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerDisable(TIMERA1_BASE, TIMER_BOTH);
-
+	MAP_TimerIntDisable(TIMERA2_BASE, TIMER_BOTH);
 #else
-		TIMSK2 &= ~_BV(OCIE2A);
+	TIMSK2 &= ~_BV(OCIE2A);
 #endif
 
 
@@ -110,7 +112,7 @@ void _t2_disable() {
 
 void _t2_start() {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerEnable(TIMERA1_BASE, TIMER_BOTH);
+    MAP_TimerEnable(TIMERA2_BASE, TIMER_BOTH);
 #else
 		TCCR2B |= _t2_csb;
 #endif
@@ -119,7 +121,7 @@ void _t2_start() {
 
 void _t2_stop() {
 #ifdef __CC3200R1M1RGC__
-	MAP_TimerDisable(TIMERA1_BASE, TIMER_BOTH);
+    MAP_TimerDisable(TIMERA2_BASE, TIMER_BOTH);
 #else
 		TCCR2B &= ~(_BV(CS20) | _BV(CS21) | _BV(CS22));          // clears all clock selects bits
 #endif

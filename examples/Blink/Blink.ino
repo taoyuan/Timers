@@ -1,6 +1,6 @@
 #include <Timers.h>
 
-HardwareTimer &Timer = Timer2; // Could be Timer1, Timer2 or Timer3
+HardwareTimer &Timer = Timer3; // Could be Timer1, Timer2 or Timer3
 
 // This example uses the timer interrupt to blink an LED
 // and also demonstrates how to share a variable between
@@ -22,13 +22,14 @@ void setup(void) {
 }
 
 // The interrupt will blink the LED, and keep track of how many times it has blinked.
-int ledState = LOW;
+uint8_t ledState = LOW;
 volatile unsigned long blinkCount = 0; // use volatile for shared variables
 
 void blinkLED(void) {
 	ledState = !ledState;
 	if (ledState) blinkCount = blinkCount + 1;  // increase when LED turns on
 	digitalWrite(led, ledState);
+	if (blinkCount > 10) Timer.detachInterrupt();
 }
 
 // The main program will print the blink count to the Arduino Serial Monitor

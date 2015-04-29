@@ -1,4 +1,3 @@
-
 #include "HardwareTimer.h"
 
 #ifdef HAVE_HWTIMER3
@@ -16,14 +15,15 @@ long _t3_cyc;
 int _t3_sca;
 
 #ifdef __CC3200R1M1RGC__
+
 void __t3_timer_handler(void) {
     unsigned long ulInts;
 
-    ulInts = MAP_TimerIntStatus(TIMERA2_BASE, 1);
+    ulInts = MAP_TimerIntStatus(TIMERA3_BASE, 1);
     //
     // Clear the timer interrupt.
     //
-    MAP_TimerIntClear(TIMERA2_BASE, ulInts);
+    MAP_TimerIntClear(TIMERA3_BASE, ulInts);
     Timer3.isr();
 }
 
@@ -39,10 +39,11 @@ void _t3_init() {
     MAP_IntMasterEnable();
     MAP_IntEnable(FAULT_SYSTICK);
     PRCMCC3200MCUInit();
-    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA2, PRCM_RUN_MODE_CLK);
-    MAP_PRCMPeripheralReset(PRCM_TIMERA2);
-    MAP_TimerConfigure(TIMERA2_BASE, TIMER_CFG_PERIODIC);
-    MAP_TimerPrescaleSet(TIMERA2_BASE, TIMER_BOTH, 0);
+    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA3, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralReset(PRCM_TIMERA3);
+    MAP_TimerConfigure(TIMERA3_BASE, TIMER_CFG_PERIODIC);
+    MAP_TimerPrescaleSet(TIMERA3_BASE, TIMER_BOTH, 0);
+
 #else
 			TCCR3A = 0;                 // clear control register A
 			TCCR3B = _BV(WGM33);        // set mode as phase and frequency correct pwm, stop the timer
@@ -54,10 +55,8 @@ void _t3_init() {
 
 long _t3_period(long us) {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerLoadSet(TIMERA2_BASE, TIMER_BOTH, US_TO_TICKS(us));
-    MAP_IntPrioritySet(INT_TIMERA0A, INT_PRIORITY_LVL_1);
-	MAP_TimerIntRegister(TIMERA2_BASE, TIMER_BOTH, __t3_timer_handler);
-    MAP_TimerIntEnable(TIMERA2_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
+    MAP_TimerLoadSet(TIMERA3_BASE, TIMER_BOTH, US_TO_TICKS(us));
+
 #else
 		long cycles = us * (SYSCLOCK / 2000000.0); // the counter runs backwards after TOP, interrupt is at BOTTOM so divide us by 2
 		if (cycles < RESOLUTION_T16) {					// no prescale, full xtal
@@ -89,6 +88,9 @@ long _t3_period(long us) {
 void _t3_enable() {
 
 #ifdef __CC3200R1M1RGC__
+	MAP_TimerIntRegister(TIMERA3_BASE, TIMER_BOTH, __t3_timer_handler);
+	MAP_IntPrioritySet(INT_TIMERA0A, INT_PRIORITY_LVL_1);
+	MAP_TimerIntEnable(TIMERA3_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
 #else
 			TIMSK3 = _BV(TOIE3);
 #endif
@@ -97,7 +99,7 @@ void _t3_enable() {
 
 void _t3_disable() {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerDisable(TIMERA2_BASE, TIMER_BOTH);
+	MAP_TimerIntDisable(TIMERA3_BASE, TIMER_BOTH);
 
 #else
 		TIMSK3 &= ~_BV(TOIE3);
@@ -107,7 +109,7 @@ void _t3_disable() {
 
 void _t3_start() {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerEnable(TIMERA2_BASE, TIMER_BOTH);
+    MAP_TimerEnable(TIMERA3_BASE, TIMER_BOTH);
 #else
 		TCCR3B |= _t3_csb;
 #endif
@@ -117,7 +119,7 @@ void _t3_start() {
 
 void _t3_stop() {
 #ifdef __CC3200R1M1RGC__
-MAP_TimerDisable(TIMERA2_BASE, TIMER_BOTH);
+    MAP_TimerDisable(TIMERA3_BASE, TIMER_BOTH);
 #else
 		TCCR3B &= ~(_BV(CS30) | _BV(CS31) | _BV(CS32));          // clears all clock selects bits
 #endif
