@@ -1,6 +1,6 @@
 #include <Timers.h>
 
-HardwareTimer &Timer = Timer1; // Could be Timer1, Timer2 or Timer3
+HardwareTimer &Timer = Timer2; // Could be Timer1, Timer2 or Timer3
 
 // This example uses the timer interrupt to blink an LED
 // and also demonstrates how to share a variable between

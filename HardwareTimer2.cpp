@@ -2,15 +2,25 @@
 
 #ifdef HAVE_HWTIMER2
 
-#include "Arduino.h"
+#ifdef __CC3200R1M1RGC__
+#include <driverlib/timer.h>
+#include <inc/hw_ints.h>
+#include <driverlib/prcm.h>
+#endif
 
 byte _t2_csb;
 long _t2_cyc;
 int _t2_sca;
-#ifdef __CC3200R1M1RGC__
 
-void TimerHandler1(void) {
-    MAP_TimerIntClear(TIMERA1_BASE, TIMER_B);
+#ifdef __CC3200R1M1RGC__
+void __t2_timer_handler(void) {
+    unsigned long ulInts;
+
+    ulInts = MAP_TimerIntStatus(TIMERA1_BASE, 1);
+    //
+    // Clear the timer interrupt.
+    //
+    MAP_TimerIntClear(TIMERA1_BASE, ulInts);
     Timer2.isr();
 }
 
@@ -23,11 +33,13 @@ ISR(TIMER2_OVF_vect) {
 
 void _t2_init() {
 #ifdef __CC3200R1M1RGC__
+    MAP_IntMasterEnable();
+    MAP_IntEnable(FAULT_SYSTICK);
+    PRCMCC3200MCUInit();
     MAP_PRCMPeripheralClkEnable(PRCM_TIMERA1, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralReset(PRCM_TIMERA1);
-    MAP_TimerConfigure(TIMERA1_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_B_PERIODIC);
-    MAP_TimerIntRegister(TIMERA1_BASE, TIMER_B, TimerHandler1);
-    MAP_TimerIntEnable(TIMERA1_BASE, TIMER_TIMB_TIMEOUT);//3E8//TIMER_TIMB_TIMEOUT
+    MAP_TimerConfigure(TIMERA1_BASE, TIMER_CFG_PERIODIC);
+    MAP_TimerPrescaleSet(TIMERA1_BASE, TIMER_BOTH, 0);
 #else
 		TCCR2A = _BV(WGM21);
 
@@ -38,22 +50,11 @@ void _t2_init() {
 
 long _t2_period(long us) {
 #ifdef __CC3200R1M1RGC__
-    if (us > 1000) {
-        long cycles = us / 1000;
-        if (cycles > 200) {
-            return 0;
-        }
-        MAP_TimerPrescaleSet(TIMERA1_BASE, TIMER_B, 250);
-        MAP_TimerLoadSet(TIMERA1_BASE, TIMER_B, 320 * cycles);
+    MAP_TimerLoadSet(TIMERA1_BASE, TIMER_BOTH, US_TO_TICKS(us));
+    MAP_IntPrioritySet(INT_TIMERA0A, INT_PRIORITY_LVL_1);
+	MAP_TimerIntRegister(TIMERA1_BASE, TIMER_BOTH, __t2_timer_handler);
+    MAP_TimerIntEnable(TIMERA1_BASE, TIMER_TIMA_TIMEOUT | TIMER_TIMB_TIMEOUT);
 
-    }
-    else if (us <= 1000) {
-
-        long cycles = us * 10;
-        MAP_TimerPrescaleSet(TIMERA1_BASE, TIMER_B, 7);//7
-        MAP_TimerLoadSet(TIMERA1_BASE, TIMER_B, cycles);
-
-    }
 
 #else
 		long cycles = us * (SYSCLOCK / 1000000.0);
@@ -98,7 +99,7 @@ void _t2_enable() {
 
 void _t2_disable() {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerDisable(TIMERA1_BASE, TIMER_B);
+    MAP_TimerDisable(TIMERA1_BASE, TIMER_BOTH);
 
 #else
 		TIMSK2 &= ~_BV(OCIE2A);
@@ -109,7 +110,7 @@ void _t2_disable() {
 
 void _t2_start() {
 #ifdef __CC3200R1M1RGC__
-    MAP_TimerEnable(TIMERA1_BASE, TIMER_B);
+    MAP_TimerEnable(TIMERA1_BASE, TIMER_BOTH);
 #else
 		TCCR2B |= _t2_csb;
 #endif
@@ -118,6 +119,7 @@ void _t2_start() {
 
 void _t2_stop() {
 #ifdef __CC3200R1M1RGC__
+	MAP_TimerDisable(TIMERA1_BASE, TIMER_BOTH);
 #else
 		TCCR2B &= ~(_BV(CS20) | _BV(CS21) | _BV(CS22));          // clears all clock selects bits
 #endif
@@ -132,9 +134,10 @@ void _t2_restart() {
 
 }
 
+
 hwt_callbacks TIMER2_CALLBACKS = {_t2_init, _t2_period, _t2_enable, _t2_disable, _t2_start, _t2_stop, _t2_restart};
 
-HardwareTimer Timer2(TIMER2_CALLBACKS, RESOLUTION_T8);
+HardwareTimer Timer2(TIMER2_CALLBACKS);
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 
