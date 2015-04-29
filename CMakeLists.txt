@@ -1,4 +1,4 @@
-# comment this and add -D CMAKE_TOOLCHAIN_FILE=[CMAKE_TOOLCHAIN_FILE path] in CLion configuration
+# comment this and add -D CMAKE_TOOLCHAIN_FILE=[CMAKE_TOOLCHAIN_FILE path] to command line
 set(CMAKE_TOOLCHAIN_FILE ~/Dev/github/energia-cmake/cmake/EnergiaToolchain.cmake)
 
 cmake_minimum_required(VERSION 3.1)
@@ -12,7 +12,7 @@ file(GLOB INC_FILES
 file(GLOB SRC_FILES
     *.cpp)
 
-generate_energia_library(dolink
+generate_energia_library(Timers
     HDRS ${INC_FILES}
     SRCS ${SRC_FILES}
     BOARD lpcc3200)
